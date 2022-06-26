@@ -65,3 +65,15 @@ Header `proto_types_defs.h` is used to setup type of timer (`TIMER_T`) and max p
 
 ## Unit tests
 Unit tests are located in tests dir. They may be compiled with help of Google Test framework.
+
+
+## Packet structure
+Usual protocol packet looks like the following:
+
+|Offset|Len|Name|Description|
+|------|---|----|-----------|
+|0|1|command|Command ID, 0..255|
+|1|1|flags|bit 7:<br>0 - request<br>1 - response|
+|2|1|tag|Number 0..255, used to ignore repeated packets|
+|3|n|payload|useful payload. May be NULL|
+|3+n|4|crc32|Checksum|
