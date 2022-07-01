@@ -22,6 +22,7 @@ typedef struct
     uint16_t usPktRespLen;
 
     uint8_t ucSendTag;
+    uint8_t ucSendCmd;
     uint8_t fSendAttempt;
     uint8_t bufPktSending[PROTO_SERVICE_BYTES_LEN + PROTO_PKT_PAYLOAD_MAX_LEN];
     uint16_t usPktSendLen;

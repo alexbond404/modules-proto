@@ -70,7 +70,8 @@ int proto_proc(proto_struct *pProto, uint8_t *buf_in, uint16_t usLenIn)
     {
         if (pProto->fSendAttempt)
         {
-            if (GET_TAG(buf_in) == pProto->ucSendTag)
+            if ((GET_TAG(buf_in) == pProto->ucSendTag) && 
+                (GET_CMD(buf_in) == pProto->ucSendCmd))
             {
                 // send complete
                 pProto->fSendAttempt = 0;
@@ -152,6 +153,9 @@ int proto_send(proto_struct *pProto, uint8_t cmd, uint8_t *payload, uint16_t usP
 
     // increase tag. Don't care about overflow
     pProto->ucSendTag += 1;
+
+    // save command to verify during response processing
+    pProto->ucSendCmd = cmd;
 
     // add header
     SET_CMD(pProto->bufPktSending, cmd);

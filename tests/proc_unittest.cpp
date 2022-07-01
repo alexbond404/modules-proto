@@ -110,6 +110,32 @@ TEST_F(ProtoTest, TestSendPayload) {
     ASSERT_EQ(ucCbCallCounter, 1);  // 1 call for correct callback
 }
 
+// Test receive response with wrong command
+TEST_F(ProtoTest, TestResponseWrongCmd) {
+    uint8_t buf_response[PROTO_SERVICE_BYTES_LEN+5];
+    uint8_t buf_payload[3] = {0x0a, 0x0b, 0x0c};
+    uint8_t buf_out[64];
+    uint16_t usBufOutLen = 0;
+    uint8_t ucCbCallCounter = 0;
+
+    // send request
+    usBufSendLen = 0;
+    ASSERT_EQ(proto_send(&proto, 0x01, buf_payload, sizeof(buf_payload), (void*)&ucCbCallCounter, on_send_payload_complete_cb), 0);
+    ASSERT_EQ(usBufSendLen, PROTO_SERVICE_BYTES_LEN+sizeof(buf_payload));
+    memcpy(buf_response, buf_send, PKT_HEADER_SIZE);
+    SET_CMD(buf_response, GET_CMD(buf_response)+1);
+    SET_FLAGS(buf_response, 0x80);
+    memcpy(GET_PAYLOAD_PTR(buf_response), "\x01\x02\x03\x04\x05", 5);
+    PUT_CRC32(buf_response, PKT_HEADER_SIZE+5, crc32(buf_response, PKT_HEADER_SIZE+5));
+
+    // process response (callback should be called here)
+    usBufSendLen = 0;
+    ASSERT_EQ(proto_proc(&proto, buf_response, sizeof(buf_response)), 0);
+    ASSERT_EQ(usBufSendLen, 0);  // don't wait for smth
+    ASSERT_EQ(ucCbCallCounter, 0);  // 0 call for correct callback
+}
+
+
 // Test send timeout
 TEST_F(ProtoTest, TestSendTimeout) {
     uint8_t buf_response[PROTO_SERVICE_BYTES_LEN];
