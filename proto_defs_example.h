@@ -22,11 +22,11 @@
  #define TIMER_INIT(timer)                      timer_init(&timer)
  #define TIMER_SET(timer, timeout, arg, cb)     timer_set(&timer, timeout, arg, cb)
  #define TIMER_STOP(timer)                      timer_stop(&timer)
+
+ #include "crc.h"
+ #define CRC32(buf, len)             crc32(buf, len)
 #else
 
 #endif
-
-#include "crc.h"
-#define CRC32(buf, len)             crc32(buf, len)
 
 #endif //__PROTO_DEFS_H

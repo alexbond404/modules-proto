@@ -17,7 +17,9 @@ typedef struct
 {
     uint8_t fRecvFirst;
     uint8_t ucRecvTag;
+    uint32_t ulLatestRecvCrc;
     uint8_t bufPktResp[PROTO_SERVICE_BYTES_LEN + PROTO_PKT_PAYLOAD_MAX_LEN];
+    uint16_t usPktRespLen;
 
     uint8_t ucSendTag;
     uint8_t fSendAttempt;

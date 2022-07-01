@@ -4,11 +4,11 @@
 
 #include "crc.c"
 #include "proto.c"
-#include "utils.h"
 
 static int iSendResult = 0;
 static uint8_t buf_send[PROTO_SERVICE_BYTES_LEN + PROTO_PKT_PAYLOAD_MAX_LEN];
 static uint16_t usBufSendLen = 0;
+static uint8_t ucProcCmdCnt = 0;
 
 
 void on_send_complete_cb(int res, uint8_t *buf, uint16_t len, void *arg);
@@ -57,10 +57,14 @@ TEST_F(ProtoTest, TestDoubleProc) {
     ASSERT_EQ(crc32(buf_send, usBufSendLen), 0);
     ASSERT_EQ(memcmp(buf_send, "\x01\x80\xab""123", usBufSendLen - 4), 0);
 
-    // second send - the same packet should be ignored
+    // second send - the same packet should be excluded from processing, but we should get response
     usBufSendLen = 0;
+    ucProcCmdCnt = 0;
     ASSERT_EQ(proto_proc(&proto, buf_in, sizeof(buf_in)), 0);
-    ASSERT_EQ(usBufSendLen, 0);
+    ASSERT_EQ(ucProcCmdCnt, 0);
+    ASSERT_EQ(usBufSendLen, PROTO_SERVICE_BYTES_LEN + 3);
+    ASSERT_EQ(crc32(buf_send, usBufSendLen), 0);
+    ASSERT_EQ(memcmp(buf_send, "\x01\x80\xab""123", usBufSendLen - 4), 0);
 }
 
 // Test send no payload
@@ -145,6 +149,8 @@ int proto_send_cb(uint8_t *buf, uint16_t len)
 
 int proto_proc_cmd(uint8_t cmd, uint8_t *payload_in, uint16_t payload_in_len, uint8_t *payload_out, uint16_t *ppayload_out_len)
 {
+    ucProcCmdCnt++;
+
     switch (cmd)
     {
         case 0x01:

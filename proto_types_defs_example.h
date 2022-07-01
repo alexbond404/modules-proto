@@ -3,9 +3,15 @@
 
 #define PROTO_PKT_PAYLOAD_MAX_LEN               4096
 
-#include <linux/timer.h>
+#ifdef GTEST
+ typedef struct
+ {
+    uint8_t fRun;
+    void *arg;
+    void (*cb)(void *arg);
+ } TIMER_T;
+#else
 
-typedef struct timer_list TIMER_T;
-
+#endif //GTEST
 
 #endif //__PROTO_TYPES_DEFS_H
