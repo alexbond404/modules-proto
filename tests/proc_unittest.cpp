@@ -94,6 +94,7 @@ TEST_F(ProtoTest, TestSendPayload) {
     uint16_t usBufOutLen = 0;
     uint8_t ucCbCallCounter = 0;
 
+    // send request
     usBufSendLen = 0;
     ASSERT_EQ(proto_send(&proto, 0x01, buf_payload, sizeof(buf_payload), (void*)&ucCbCallCounter, on_send_payload_complete_cb), 0);
     ASSERT_EQ(usBufSendLen, PROTO_SERVICE_BYTES_LEN+sizeof(buf_payload));
@@ -102,6 +103,7 @@ TEST_F(ProtoTest, TestSendPayload) {
     memcpy(GET_PAYLOAD_PTR(buf_response), "\x01\x02\x03\x04\x05", 5);
     PUT_CRC32(buf_response, PKT_HEADER_SIZE+5, crc32(buf_response, PKT_HEADER_SIZE+5));
 
+    // process response (callback should be called here)
     usBufSendLen = 0;
     ASSERT_EQ(proto_proc(&proto, buf_response, sizeof(buf_response)), 0);
     ASSERT_EQ(usBufSendLen, 0);  // don't wait for smth
@@ -135,6 +137,39 @@ TEST_F(ProtoTest, TestSendTimeout) {
     ASSERT_EQ(usBufSendLen, 0);
     ASSERT_EQ(proto.timerSend.fRun, 0);         // make sure timer is not running
     ASSERT_EQ(ucCbCallCounter, 1);              // 1 call for correct callback
+}
+
+// Test sync send/recv
+TEST_F(ProtoTest, TestSendRecvSync) {
+    uint8_t buf_response[PROTO_SERVICE_BYTES_LEN+5];
+    uint8_t buf_payload[3] = {0x0a, 0x0b, 0x0c};
+    uint8_t buf_out[64];
+    uint16_t usBufOutLen = 0;
+    uint8_t ucCbCallCounter = 0;
+    uint8_t buf_in[PROTO_SERVICE_BYTES_LEN] = "\x01\x00\xab";
+    PUT_CRC32(buf_in, 3, crc32(buf_in, 3));
+
+    // send request
+    usBufSendLen = 0;
+    ASSERT_EQ(proto_send(&proto, 0x01, buf_payload, sizeof(buf_payload), (void*)&ucCbCallCounter, on_send_payload_complete_cb), 0);
+    ASSERT_EQ(usBufSendLen, PROTO_SERVICE_BYTES_LEN+sizeof(buf_payload));
+    memcpy(buf_response, buf_send, PKT_HEADER_SIZE);
+    SET_FLAGS(buf_response, 0x80);
+    memcpy(GET_PAYLOAD_PTR(buf_response), "\x01\x02\x03\x04\x05", 5);
+    PUT_CRC32(buf_response, PKT_HEADER_SIZE+5, crc32(buf_response, PKT_HEADER_SIZE+5));
+
+    // proc some different packet
+    usBufSendLen = 0;
+    ASSERT_EQ(proto_proc(&proto, buf_in, sizeof(buf_in)), 0);
+    ASSERT_EQ(usBufSendLen, PROTO_SERVICE_BYTES_LEN + 3);
+    ASSERT_EQ(crc32(buf_send, usBufSendLen), 0);
+    ASSERT_EQ(memcmp(buf_send, "\x01\x80\xab""123", usBufSendLen - 4), 0);
+
+    // process response (callback should be called here)
+    usBufSendLen = 0;
+    ASSERT_EQ(proto_proc(&proto, buf_response, sizeof(buf_response)), 0);
+    ASSERT_EQ(usBufSendLen, 0);  // don't wait for smth
+    ASSERT_EQ(ucCbCallCounter, 1);  // 1 call for correct callback
 }
 
 
